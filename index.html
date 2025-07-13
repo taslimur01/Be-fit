@@ -1,0 +1,328 @@
+<!DOCTYPE html><html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Self Control</title>
+  <style>
+    body {
+      background-color: #111;
+      color: white;
+      font-family: sans-serif;
+      transition: background-color 0.5s ease;
+    }
+    .container {
+      padding: 3rem 1rem 2rem;
+      max-width: 600px;
+      margin: auto;
+    }
+    .highlight {
+      color: green;
+      text-align: center;
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+    }
+    .subtitle {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      font-size: 1rem;
+    }
+    .date-display, .total-input-display {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    .total-input-display span {
+      color: green;
+    }
+    .totals-box {
+      margin: 2rem 0;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      padding: 1rem;
+      background-color: #222;
+      font-weight: bold;
+      text-align: center;
+    }
+    .totals-box .expense { color: #DC3C22; }
+    .daily-inputs input {
+      display: block;
+      width: 100%;
+      margin-bottom: 1rem;
+      padding: 0.7rem;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      background-color: #333;
+      color: white;
+      font-size: 1rem;
+    }
+    .namaz-checks button {
+      padding: 0.6rem 1rem;
+      border-radius: 25px;
+      background: linear-gradient(145deg, #2e2e2e, #1a1a1a);
+      color: white;
+      border: none;
+      margin: 0.5rem;
+      cursor: pointer;
+    }
+    .namaz-checkboxes label {
+      display: block;
+      margin: 0.3rem auto;
+      text-align: center;
+    }
+    select, textarea {
+      width: 100%;
+      padding: 0.7rem;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      background-color: #333;
+      color: white;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+    .save-button {
+      text-align: center;
+      margin-top: 2rem;
+    }
+    .save-button button {
+      background-color: green;
+      color: white;
+      border: none;
+      padding: 0.8rem 1.5rem;
+      border-radius: 30px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .history {
+      margin-top: 2rem;
+    }
+    .history-item {
+      background: #222;
+      border-radius: 10px;
+      padding: 0.5rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+    }
+    .history-item.danger {
+      background-color: #DC3C22;
+      color: white;
+    }
+    .delete-button {
+      background-color: #DC3C22;
+      border: none;
+      color: white;
+      border-radius: 5px;
+      padding: 0.3rem 0.6rem;
+      cursor: pointer;
+    }
+    .blink {
+      animation: blinkBG 1s infinite;
+    }
+    .blink-item {
+      animation: blinkBG 1s infinite;
+    }
+    @keyframes blinkBG {
+      0%, 100% { background-color: #111; }
+      50% { background-color: #DC3C22; }
+    }
+  </style>
+</head>
+<body id="mainBody">
+<div class="container">
+  <div class="highlight">নিশ্চয় আল্লাহ তোমাকে সবসময় দেখছেন</div>
+  <div class="subtitle">তুমি নিশ্চয় তোমার মনের উপর জয় করতে পারবে</div>  <div class="date-display" id="currentDate"></div>
+  <div class="total-input-display">Total input ~ <span id="totalCounter">0 D</span></div>  <div class="totals-box">
+    মোট আয়: <span id="totalIncome">0</span> | মোট ব্যয়: <span class="expense" id="totalExpense">0</span><br>
+    সেভিংস: <span id="totalSavings">0</span>
+  </div>  <div class="daily-inputs">
+    <input type="number" id="todayIncome" placeholder="আজকের আয়">
+    <input type="number" id="todayExpense" placeholder="আজকের ব্যয়">
+  </div>  <h4>তুমি কি নামাজ পড়েছো?</h4>
+  <div class="namaz-checks">
+    <button onclick="selectNamaz('yes')">হ্যাঁ 🥰</button>
+    <button onclick="selectNamaz('no')">না 😭</button>
+  </div>
+  <div id="namazCheckboxes" class="namaz-checkboxes"></div>  <h4>Do you masterbate today?</h4>
+  <select id="masturbationSelect">
+    <option>Select one</option>
+    <option>হ্যাঁ 😭</option>
+    <option>না 🌹</option>
+  </select>  <textarea id="goodDeed" placeholder="ভালো কাজ"></textarea>  <textarea id="badDeed" placeholder="খারাপ কাজ"></textarea>  <div class="save-button">
+    <button onclick="saveData()">Save</button>
+  </div>  <div class="history" id="historyList"></div>
+</div><script>
+  const today = new Date();
+  document.getElementById("currentDate").innerText = today.toDateString();
+
+  let allInputs = JSON.parse(localStorage.getItem("selfControlData")) || [];
+  let isDangerNow = false;
+
+  function updateHistory() {
+    const list = document.getElementById("historyList");
+    list.innerHTML = "";
+    allInputs.forEach((entry, index) => {
+      const div = document.createElement("div");
+      div.className = "history-item" + (entry.danger ? " danger" : "");
+      div.innerHTML = `<div>
+        📅 <b>${entry.date}</b><br>
+        আয়: <span style='color:green'>${entry.income}</span> |
+        ব্যয়: <span style='color:${entry.danger ? 'green' : '#DC3C22'}'>${entry.expense}</span><br>
+        👍 ${entry.good || 'না'}<br>
+        👎 ${entry.bad || 'না'}
+      </div>
+      <button class="delete-button" onclick="confirmDelete(${index})">❌</button>`;
+      list.insertBefore(div, list.firstChild);
+    });
+    document.getElementById("totalCounter").innerText = getDurationString(allInputs);
+    updateSummary();
+  }
+
+  function confirmDelete(index) {
+    if (confirm("Sure?")) {
+      deleteEntry(index);
+    }
+  }
+
+  function deleteEntry(index) {
+    allInputs.splice(index, 1);
+    localStorage.setItem("selfControlData", JSON.stringify(allInputs));
+    updateHistory();
+  }
+
+  function getDurationString(data) {
+    if (data.length === 0) return "0 D";
+    const uniqueDates = [...new Set(data.map(e => e.date))];
+    const first = new Date(data[0].timestamp);
+    const last = new Date(data[data.length - 1].timestamp);
+    const diff = Math.floor((last - first) / (1000 * 60 * 60 * 24)) + 1;
+    const years = Math.floor(diff / 365);
+    const months = Math.floor((diff % 365) / 30);
+    const days = diff % 30;
+    return `${years ? years + ' Y ' : ''}${months ? months + ' M ' : ''}${days} D (${uniqueDates.length} দিন)`;
+  }
+
+  function updateSummary() {
+    let totalIncome = 0, totalExpense = 0;
+    allInputs.forEach(e => {
+      totalIncome += Number(e.income);
+      totalExpense += Number(e.expense);
+    });
+    document.getElementById("totalIncome").innerText = totalIncome;
+    document.getElementById("totalExpense").innerText = totalExpense;
+    document.getElementById("totalSavings").innerText = totalIncome - totalExpense;
+  }
+
+  function selectNamaz(answer) {
+    const checkboxes = document.getElementById("namazCheckboxes");
+    checkboxes.innerHTML = "";
+    if (answer === 'yes') {
+      const todayDay = new Date().getDay();
+      const names = todayDay === 5 ? ['সব ওয়াক্ত', 'ফজর', "জুম'আ", 'আছর', 'মাগরিব', 'এশা'] : ['সব ওয়াক্ত', 'ফজর', 'যোহর', 'আছর', 'মাগরিব', 'এশা'];
+      names.forEach(name => {
+        const label = document.createElement('label');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = name;
+        checkbox.name = 'namaz';
+        checkbox.onclick = function () {
+          if (checkbox.value === 'সব ওয়াক্ত' && checkbox.checked) {
+            document.querySelectorAll('input[name="namaz"]').forEach(cb => cb.checked = true);
+          }
+          checkNamaz();
+        };
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(" " + name));
+        checkboxes.appendChild(label);
+      });
+    } else {
+      isDangerNow = true;
+      document.body.classList.add('blink');
+    }
+  }
+
+  function checkNamaz() {
+    const checkboxes = document.querySelectorAll('input[name="namaz"]');
+    const selected = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+    if (!selected.includes('সব ওয়াক্ত') || selected.length < 6) {
+      isDangerNow = true;
+      document.body.classList.add('blink');
+    } else {
+      isDangerNow = false;
+      document.body.classList.remove('blink');
+    }
+  }
+
+  document.getElementById("masturbationSelect").addEventListener('change', function () {
+    if (this.value === 'হ্যাঁ 😭') {
+      isDangerNow = true;
+      document.body.classList.add('blink');
+    } else {
+      isDangerNow = false;
+      document.body.classList.remove('blink');
+    }
+  });
+
+  function saveData() {
+    document.body.classList.remove('blink');
+
+    const income = document.getElementById("todayIncome").value;
+    const expense = document.getElementById("todayExpense").value;
+    const good = document.getElementById("goodDeed").value;
+    const bad = document.getElementById("badDeed").value;
+    const masturbation = document.getElementById("masturbationSelect").value;
+    const namazBoxes = document.querySelectorAll('input[name="namaz"]');
+    const namaz = [];
+    namazBoxes.forEach(cb => { if (cb.checked) namaz.push(cb.value); });
+
+    const entry = {
+      date: today.toDateString(),
+      timestamp: today.getTime(),
+      income, expense, good, bad, namaz, masturbation,
+      danger: isDangerNow
+    };
+
+    allInputs.push(entry);
+    localStorage.setItem("selfControlData", JSON.stringify(allInputs));
+
+    document.getElementById("todayIncome").value = "";
+    document.getElementById("todayExpense").value = "";
+    document.getElementById("goodDeed").value = "";
+    document.getElementById("badDeed").value = "";
+    document.getElementById("masturbationSelect").selectedIndex = 0;
+    document.getElementById("namazCheckboxes").innerHTML = "";
+
+    updateHistory();
+
+    setTimeout(() => {
+      const historyList = document.getElementById("historyList");
+      const latest = historyList.firstChild;
+      if (latest) {
+        latest.classList.add("blink-item");
+        setTimeout(() => latest.classList.remove("blink-item"), 4000);
+      }
+    }, 200);
+  }
+  function updateHistory() {
+  const list = document.getElementById("historyList");
+  list.innerHTML = "";
+  allInputs.forEach((entry, index) => {
+    const div = document.createElement("div");
+    div.className = "history-item" + (entry.danger ? " danger" : "");
+    div.innerHTML = `<div>
+      📅 <b>${entry.date}</b><br>
+      আয়: <span style='color:green'>${entry.income}</span> |
+      ব্যয়: <span style='color:${entry.danger ? 'green' : '#DC3C22'}'>${entry.expense}</span><br>
+      👍 ${entry.good || 'না'}<br>
+      👎 ${entry.bad || 'না'}<br>
+      🕌 নামাজ: ${entry.namaz && entry.namaz.length ? entry.namaz.join(', ') : 'না'}<br>
+      💦: ${entry.masturbation || 'Select one'}
+    </div>
+    <button class="delete-button" onclick="confirmDelete(${index})">❌</button>`;
+    list.insertBefore(div, list.firstChild);
+  });
+  document.getElementById("totalCounter").innerText = getDurationString(allInputs);
+  updateSummary();
+}
+
+  updateHistory();
+</script></body>
+</html>
