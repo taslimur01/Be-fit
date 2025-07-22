@@ -128,7 +128,15 @@
 </head>
 <body id="mainBody">
 <div class="container">
-  <div class="highlight">নিশ্চয় আল্লাহ তোমাকে সবসময় দেখছেন</div>
+<div class="totals-box">
+  <div style="color: green;"><b>Live without Masterbation</b></div></br>
+  <div id="timerDisplay">0 দিন 0 ঘণ্টা 0 মিনিট</div>
+  <div style="margin-top: 1rem;">
+    <button onclick="startTimer()" style="padding: 0.5rem 1rem; border-radius: 20px;">Start Timer</button>
+    <button onclick="resetTimer()" style="padding: 0.5rem 1rem; border-radius: 20px; background-color: #DC3C22; color: white;">Reset Timer</button>
+  </div>
+</div>
+  <div class="highlight"><b>নিশ্চয় আল্লাহ তোমাকে সবসময় দেখছেন</b></div>
   <div class="subtitle">তুমি নিশ্চয় তোমার মনের উপর জয় করতে পারবে</div>  <div class="date-display" id="currentDate"></div>
   <div class="total-input-display">Total input ~ <span id="totalCounter">0 D</span></div>  <div class="totals-box">
     মোট আয়: <span id="totalIncome">0</span> | মোট ব্যয়: <span class="expense" id="totalExpense">0</span><br>
@@ -322,7 +330,45 @@
   document.getElementById("totalCounter").innerText = getDurationString(allInputs);
   updateSummary();
 }
+let timerStart = localStorage.getItem("selfControlTimerStart");
+let timerInterval;
 
+function updateTimerDisplay() {
+  if (!timerStart) return;
+  const now = new Date().getTime();
+  const diff = now - Number(timerStart);
+  const totalMins = Math.floor(diff / (1000 * 60));
+  const days = Math.floor(totalMins / 1440);
+  const hours = Math.floor((totalMins % 1440) / 60);
+  const minutes = totalMins % 60;
+  document.getElementById("timerDisplay").innerText = `${days} দিন ${hours} ঘণ্টা ${minutes} মিনিট`;
+}
+
+function startTimer() {
+  if (!timerStart) {
+    timerStart = new Date().getTime();
+    localStorage.setItem("selfControlTimerStart", timerStart);
+  }
+  if (!timerInterval) {
+    timerInterval = setInterval(updateTimerDisplay, 60000); // প্রতি মিনিটে আপডেট
+    updateTimerDisplay(); // সাথে সাথেই আপডেট
+  }
+}
+
+function resetTimer() {
+  if (confirm("Are you sure?")) {
+    localStorage.removeItem("selfControlTimerStart");
+    timerStart = null;
+    clearInterval(timerInterval);
+    timerInterval = null;
+    document.getElementById("timerDisplay").innerText = "0 দিন 0 ঘণ্টা 0 মিনিট";
+  }
+}
+
+// পেজ লোড হলে যদি আগেই চালু করা থাকে, আবার শুরু করো
+if (timerStart) {
+  startTimer();
+}
   updateHistory();
 </script></body>
 </html>
